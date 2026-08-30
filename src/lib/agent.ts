@@ -82,17 +82,20 @@ export async function runAgent(
     const fullSystemPrompt = `${SYSTEM_PROMPT}\n\nCurrent Business Data:\n${boardDataContext}`;
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash",
+        systemInstruction: {
+            role: "user",
+            parts: [{ text: fullSystemPrompt }],
+        },
+    });
 
     const history = conversationHistory.map((msg) => ({
         role: msg.role === "user" ? "user" as const : "model" as const,
         parts: [{ text: msg.content }],
     }));
 
-    const chat = model.startChat({
-        history,
-        systemInstruction: fullSystemPrompt,
-    });
+    const chat = model.startChat({ history });
 
     const result = await chat.sendMessage(userMessage);
     const reply = result.response.text();
