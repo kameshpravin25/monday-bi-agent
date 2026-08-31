@@ -141,14 +141,6 @@ export default function Home() {
                                 msg.content
                             )}
                         </div>
-                        {msg.caveats && msg.caveats.length > 0 && (
-                            <div className="caveats">
-                                <div className="caveats-title">Data Notes</div>
-                                {msg.caveats.map((c, j) => (
-                                    <div key={j}>{c}</div>
-                                ))}
-                            </div>
-                        )}
                     </div>
                 ))}
 
