@@ -36,14 +36,16 @@ For leadership update requests, give a short executive summary:
 - Items that need attention
 - One or two recommendations`;
 
-export async function runAgent(
-    userMessage: string,
-    conversationHistory: Array<{ role: string; content: string }>
-): Promise<AgentResponse> {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
+// Cache board data for 5 minutes to avoid re-fetching on every message
+let cachedData: { context: string; caveats: string[] } | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 5 * 60 * 1000;
 
-    // Fetch all board data from Monday.com
+async function getCachedBoardData(): Promise<{ context: string; caveats: string[] }> {
+    if (cachedData && Date.now() - cacheTimestamp < CACHE_TTL) {
+        return { context: cachedData.context, caveats: [...cachedData.caveats] };
+    }
+
     let boardDataContext = "";
     const allCaveats: string[] = [];
 
@@ -51,14 +53,13 @@ export async function runAgent(
         const boards = await listBoards();
 
         if (boards.length === 0) {
-            boardDataContext = "No boards found in Monday.com. The user may need to import data first.";
+            boardDataContext = "No boards found in Monday.com.";
             allCaveats.push("No Monday.com boards found");
         } else {
             for (const board of boards) {
                 try {
                     const raw = await fetchBoardData(board.id);
                     const { data, quality } = normalizeData(raw.items, raw.boardName);
-
                     allCaveats.push(...quality.issues);
 
                     const columns = raw.columns
@@ -76,7 +77,6 @@ export async function runAgent(
                 } catch (err) {
                     const msg = err instanceof Error ? err.message : String(err);
                     allCaveats.push(`Failed to fetch board "${board.name}": ${msg}`);
-                    boardDataContext += `\n\n--- Board: ${board.name} ---\nError fetching data: ${msg}\n`;
                 }
             }
         }
@@ -85,6 +85,21 @@ export async function runAgent(
         allCaveats.push(`Monday.com connection error: ${msg}`);
         boardDataContext = `Error connecting to Monday.com: ${msg}`;
     }
+
+    cachedData = { context: boardDataContext, caveats: allCaveats };
+    cacheTimestamp = Date.now();
+    return { context: boardDataContext, caveats: [...allCaveats] };
+}
+
+export async function runAgent(
+    userMessage: string,
+    conversationHistory: Array<{ role: string; content: string }>
+): Promise<AgentResponse> {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
+
+    // Fetch board data with caching (5 min TTL)
+    const { context: boardDataContext, caveats: allCaveats } = await getCachedBoardData();
 
     const fullSystemPrompt = `${SYSTEM_PROMPT}\n\nCurrent Business Data:\n${boardDataContext}`;
 
