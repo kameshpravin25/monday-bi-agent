@@ -6,8 +6,22 @@ import ReactMarkdown from "react-markdown";
 interface Message {
     role: "user" | "assistant";
     content: string;
-    caveats?: string[];
+    model?: string;
 }
+
+interface ModelOption {
+    id: string;
+    name: string;
+    provider: string;
+}
+
+const DEFAULT_MODELS: ModelOption[] = [
+    { id: "gemini-flash", name: "Gemini 3.6 Flash", provider: "gemini" },
+    { id: "llama-3.3-70b", name: "Llama 3.3 70B", provider: "groq" },
+    { id: "qwen-qwq-32b", name: "Qwen QwQ 32B", provider: "groq" },
+    { id: "deepseek-r1-70b", name: "DeepSeek R1 70B", provider: "groq" },
+    { id: "gemma2-9b", name: "Gemma 2 9B", provider: "groq" },
+];
 
 const HINT_QUERIES = [
     "How is our sales pipeline looking this quarter?",
@@ -22,8 +36,13 @@ export default function Home() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [connected, setConnected] = useState(false);
+    const [selectedModel, setSelectedModel] = useState("gemini-flash");
+    const [showModelPicker, setShowModelPicker] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [showSearch, setShowSearch] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    const modelPickerRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -37,12 +56,27 @@ export default function Home() {
         inputRef.current?.focus();
     }, []);
 
+    // Close model picker on outside click
+    useEffect(() => {
+        function handleClick(e: MouseEvent) {
+            if (modelPickerRef.current && !modelPickerRef.current.contains(e.target as Node)) {
+                setShowModelPicker(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClick);
+        return () => document.removeEventListener("mousedown", handleClick);
+    }, []);
+
+    const currentModel = DEFAULT_MODELS.find((m) => m.id === selectedModel) || DEFAULT_MODELS[0];
+
     const sendMessage = async (text?: string) => {
         const messageText = text || input.trim();
         if (!messageText || loading) return;
 
         setInput("");
         setError(null);
+        setShowSearch(false);
+        setSearchQuery("");
 
         const userMsg: Message = { role: "user", content: messageText };
         setMessages((prev) => [...prev, userMsg]);
@@ -57,7 +91,7 @@ export default function Home() {
             const res = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: messageText, history }),
+                body: JSON.stringify({ message: messageText, history, model: selectedModel }),
             });
 
             const data = await res.json();
@@ -70,7 +104,7 @@ export default function Home() {
             const assistantMsg: Message = {
                 role: "assistant",
                 content: data.reply,
-                caveats: data.dataCaveats?.filter((c: string) => c.length > 0),
+                model: currentModel.name,
             };
             setMessages((prev) => [...prev, assistantMsg]);
         } catch (err) {
@@ -95,6 +129,13 @@ export default function Home() {
         el.style.height = Math.min(el.scrollHeight, 120) + "px";
     };
 
+    // Filter messages by search
+    const filteredMessages = searchQuery
+        ? messages.filter((m) =>
+            m.content.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        : messages;
+
     return (
         <div className="app">
             <header className="header">
@@ -102,11 +143,76 @@ export default function Home() {
                     <h1 className="header-title">Monday BI Agent</h1>
                     <span className="header-subtitle">Skylark Drones</span>
                 </div>
-                <div className="header-status">
-                    <span className={`status-dot ${connected ? "connected" : ""}`}></span>
-                    {connected ? "Connected" : "Ready"}
+                <div className="header-actions">
+                    <button
+                        className="icon-btn"
+                        onClick={() => { setShowSearch(!showSearch); setSearchQuery(""); }}
+                        aria-label="Search messages"
+                        title="Search messages"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                    </button>
+                    <div className="model-picker-wrapper" ref={modelPickerRef}>
+                        <button
+                            className="model-btn"
+                            onClick={() => setShowModelPicker(!showModelPicker)}
+                        >
+                            <span className="model-btn-name">{currentModel.name}</span>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                        </button>
+                        {showModelPicker && (
+                            <div className="model-dropdown">
+                                <div className="model-dropdown-header">Select Model</div>
+                                {DEFAULT_MODELS.map((m) => (
+                                    <button
+                                        key={m.id}
+                                        className={`model-option ${m.id === selectedModel ? "active" : ""}`}
+                                        onClick={() => {
+                                            setSelectedModel(m.id);
+                                            setShowModelPicker(false);
+                                        }}
+                                    >
+                                        <span className="model-option-name">{m.name}</span>
+                                        <span className="model-option-provider">{m.provider}</span>
+                                    </button>
+                                ))}
+                                <div className="model-dropdown-footer">All models are free to use</div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="header-status">
+                        <span className={`status-dot ${connected ? "connected" : ""}`}></span>
+                        {connected ? "Connected" : "Ready"}
+                    </div>
                 </div>
             </header>
+
+            {showSearch && (
+                <div className="search-bar">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    <input
+                        type="text"
+                        className="search-input"
+                        placeholder="Search in conversation..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        autoFocus
+                    />
+                    {searchQuery && (
+                        <span className="search-count">
+                            {filteredMessages.length} found
+                        </span>
+                    )}
+                </div>
+            )}
 
             <div className="messages">
                 {messages.length === 0 && !loading && (
@@ -127,11 +233,12 @@ export default function Home() {
                     </div>
                 )}
 
-                {messages.map((msg, i) => (
+                {filteredMessages.map((msg, i) => (
                     <div key={i} className={`message ${msg.role}`}>
-                        {i === 0 || messages[i - 1].role !== msg.role ? (
+                        {i === 0 || filteredMessages[i - 1].role !== msg.role ? (
                             <span className="message-label">
                                 {msg.role === "user" ? "You" : "Agent"}
+                                {msg.model && <span className="message-model">{msg.model}</span>}
                             </span>
                         ) : null}
                         <div className="message-content">
@@ -151,7 +258,7 @@ export default function Home() {
                             <span className="loading-dot"></span>
                             <span className="loading-dot"></span>
                         </div>
-                        <span className="loading-text">Querying Monday.com and analyzing...</span>
+                        <span className="loading-text">Querying with {currentModel.name}...</span>
                     </div>
                 )}
 

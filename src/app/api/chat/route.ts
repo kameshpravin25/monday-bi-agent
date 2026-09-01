@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runAgent } from "@/lib/agent";
+import { runAgent, AVAILABLE_MODELS } from "@/lib/agent";
 
 interface ChatMessage {
     role: "user" | "assistant";
@@ -9,6 +9,7 @@ interface ChatMessage {
 interface RequestBody {
     message: string;
     history: ChatMessage[];
+    model?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
             content: msg.content,
         }));
 
-        const result = await runAgent(body.message, history);
+        const result = await runAgent(body.message, history, body.model);
 
         return NextResponse.json({
             reply: result.reply,
@@ -41,4 +42,8 @@ export async function POST(req: NextRequest) {
             { status: 500 }
         );
     }
+}
+
+export async function GET() {
+    return NextResponse.json({ models: AVAILABLE_MODELS });
 }
