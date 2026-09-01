@@ -17,11 +17,11 @@ interface ModelOption {
 
 const DEFAULT_MODELS: ModelOption[] = [
     { id: "gemini-flash", name: "Gemini 3.6 Flash", provider: "gemini" },
-    { id: "deepseek-chat", name: "DeepSeek V3", provider: "deepseek" },
-    { id: "deepseek-reasoner", name: "DeepSeek R1", provider: "deepseek" },
-    { id: "llama-3.3-70b", name: "Llama 3.3 70B", provider: "openrouter" },
-    { id: "qwen-qwq-32b", name: "Qwen QwQ 32B", provider: "openrouter" },
-    { id: "gemma-3-27b", name: "Gemma 3 27B", provider: "openrouter" },
+    { id: "nemotron-ultra", name: "Nemotron 3 Ultra 550B", provider: "openrouter" },
+    { id: "nemotron-super", name: "Nemotron 3 Super 120B", provider: "openrouter" },
+    { id: "minimax-m3", name: "MiniMax M3", provider: "openrouter" },
+    { id: "glm-5.2", name: "GLM 5.2", provider: "openrouter" },
+    { id: "nemotron-nano", name: "Nemotron Nano 30B", provider: "openrouter" },
 ];
 
 const HINT_QUERIES = [

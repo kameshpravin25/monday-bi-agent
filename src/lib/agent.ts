@@ -16,11 +16,11 @@ export interface ModelOption {
 
 export const AVAILABLE_MODELS: ModelOption[] = [
     { id: "gemini-flash", name: "Gemini 3.6 Flash", provider: "gemini", modelId: "gemini-3.6-flash" },
-    { id: "deepseek-chat", name: "DeepSeek V3", provider: "deepseek", modelId: "deepseek-chat" },
-    { id: "deepseek-reasoner", name: "DeepSeek R1", provider: "deepseek", modelId: "deepseek-reasoner" },
-    { id: "llama-3.3-70b", name: "Llama 3.3 70B", provider: "openrouter", modelId: "meta-llama/llama-3.3-70b-instruct:free" },
-    { id: "qwen-qwq-32b", name: "Qwen QwQ 32B", provider: "openrouter", modelId: "qwen/qwq-32b:free" },
-    { id: "gemma-3-27b", name: "Gemma 3 27B", provider: "openrouter", modelId: "google/gemma-3-27b-it:free" },
+    { id: "nemotron-ultra", name: "Nemotron 3 Ultra 550B", provider: "openrouter", modelId: "nvidia/nemotron-3-ultra-550b-a55b:free" },
+    { id: "nemotron-super", name: "Nemotron 3 Super 120B", provider: "openrouter", modelId: "nvidia/nemotron-3-super-120b-a12b:free" },
+    { id: "minimax-m3", name: "MiniMax M3", provider: "openrouter", modelId: "minimax/minimax-m3:free" },
+    { id: "glm-5.2", name: "GLM 5.2", provider: "openrouter", modelId: "z-ai/glm-5.2:free" },
+    { id: "nemotron-nano", name: "Nemotron Nano 30B", provider: "openrouter", modelId: "nvidia/nemotron-3-nano-30b-a3b:free" },
 ];
 
 const SYSTEM_PROMPT = `You are a Business Intelligence agent built exclusively for Skylark Drones. Your sole purpose is to answer business questions using data from Monday.com boards (Work Orders and Deals).
