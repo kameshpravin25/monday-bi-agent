@@ -32,10 +32,10 @@ const MODELS: ModelOption[] = [
 ];
 
 const STARTERS = [
-    { title: "Executive Leadership Update", tag: "Featured", desc: "Consolidated commercial, operations, cash flow & risk" },
-    { title: "Analyze Deals pipeline for this quarter", tag: "", desc: "Open value, weighted pipeline & sector breakdown" },
-    { title: "Show me operational metrics", tag: "", desc: "Work order status, completion rates across projects" },
-    { title: "Compare sector performance", tag: "", desc: "Revenue, deal count & win rate by sector" },
+    { title: "Executive Leadership Update", desc: "Consolidated commercial, operations, cash flow & risk" },
+    { title: "Analyze Deals pipeline for this quarter", desc: "Open value, weighted pipeline & sector breakdown" },
+    { title: "Show me operational metrics", desc: "Work order status, completion rates across projects" },
+    { title: "Compare sector performance", desc: "Revenue, deal count & win rate by sector" },
 ];
 
 function getGreeting(): string {
@@ -230,17 +230,13 @@ export default function Home() {
                     <div className="topbar-title">
                         {activeThread ? activeThread.title : "Monday BI Agent"}
                     </div>
-                    <button className="topbar-new" onClick={createNewThread}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                        New Thread
-                    </button>
+                    <div></div>
                 </div>
 
                 {/* Chat Area */}
                 <div className="chat-area">
                     {isEmptyState ? (
                         <div className="empty-state">
-                            <div className="greeting-orb"></div>
                             <h2 className="greeting-text">
                                 {getGreeting()}, <span className="greeting-role">Founder</span>
                             </h2>
@@ -292,13 +288,13 @@ export default function Home() {
 
                             {/* Executive Starter Cards */}
                             <div className="starter-section">
-                                <div className="starter-label">Executive Starters</div>
+                                <div className="starter-label">Suggested</div>
                                 <div className="starter-grid">
                                     {STARTERS.map((s, i) => (
                                         <button key={i} className="starter-card" onClick={() => sendMessage(s.title)}>
                                             <div className="starter-card-top">
                                                 <span className="starter-title">{s.title}</span>
-                                                {s.tag && <span className="starter-tag">{s.tag}</span>}
+
                                             </div>
                                             <span className="starter-desc">{s.desc}</span>
                                         </button>
