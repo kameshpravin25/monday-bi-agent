@@ -10,16 +10,17 @@ interface AgentResponse {
 export interface ModelOption {
     id: string;
     name: string;
-    provider: "gemini" | "groq";
+    provider: "gemini" | "openrouter" | "deepseek";
     modelId: string;
 }
 
 export const AVAILABLE_MODELS: ModelOption[] = [
     { id: "gemini-flash", name: "Gemini 3.6 Flash", provider: "gemini", modelId: "gemini-3.6-flash" },
-    { id: "llama-3.3-70b", name: "Llama 3.3 70B", provider: "groq", modelId: "llama-3.3-70b-versatile" },
-    { id: "qwen-qwq-32b", name: "Qwen QwQ 32B", provider: "groq", modelId: "qwen-qwq-32b" },
-    { id: "deepseek-r1-70b", name: "DeepSeek R1 70B", provider: "groq", modelId: "deepseek-r1-distill-llama-70b" },
-    { id: "gemma2-9b", name: "Gemma 2 9B", provider: "groq", modelId: "gemma2-9b-it" },
+    { id: "deepseek-chat", name: "DeepSeek V3", provider: "deepseek", modelId: "deepseek-chat" },
+    { id: "deepseek-reasoner", name: "DeepSeek R1", provider: "deepseek", modelId: "deepseek-reasoner" },
+    { id: "llama-3.3-70b", name: "Llama 3.3 70B", provider: "openrouter", modelId: "meta-llama/llama-3.3-70b-instruct:free" },
+    { id: "qwen-qwq-32b", name: "Qwen QwQ 32B", provider: "openrouter", modelId: "qwen/qwq-32b:free" },
+    { id: "gemma-3-27b", name: "Gemma 3 27B", provider: "openrouter", modelId: "google/gemma-3-27b-it:free" },
 ];
 
 const SYSTEM_PROMPT = `You are a Business Intelligence agent built exclusively for Skylark Drones. Your sole purpose is to answer business questions using data from Monday.com boards (Work Orders and Deals).
@@ -135,16 +136,16 @@ async function callGemini(
     return result.response.text();
 }
 
-// --- Groq Provider (OpenAI-compatible) ---
-async function callGroq(
+// --- OpenAI-compatible Provider (OpenRouter / DeepSeek) ---
+async function callOpenAICompatible(
+    baseUrl: string,
+    apiKey: string,
     modelId: string,
     systemPrompt: string,
     userMessage: string,
-    history: Array<{ role: string; content: string }>
+    history: Array<{ role: string; content: string }>,
+    extraHeaders?: Record<string, string>
 ): Promise<string> {
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) throw new Error("GROQ_API_KEY is not set. Get a free key at console.groq.com");
-
     const messages = [
         { role: "system", content: systemPrompt },
         ...history.map((msg) => ({
@@ -154,11 +155,12 @@ async function callGroq(
         { role: "user", content: userMessage },
     ];
 
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const res = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${apiKey}`,
+            ...extraHeaders,
         },
         body: JSON.stringify({
             model: modelId,
@@ -170,7 +172,7 @@ async function callGroq(
 
     if (!res.ok) {
         const text = await res.text();
-        throw new Error(`Groq API error (${res.status}): ${text}`);
+        throw new Error(`API error (${res.status}): ${text}`);
     }
 
     const data = await res.json();
@@ -195,8 +197,14 @@ export async function runAgent(
         try {
             if (selectedModel.provider === "gemini") {
                 reply = await callGemini(selectedModel.modelId, fullSystemPrompt, userMessage, conversationHistory);
+            } else if (selectedModel.provider === "deepseek") {
+                const dsKey = process.env.DEEPSEEK_API_KEY;
+                if (!dsKey) throw new Error("DEEPSEEK_API_KEY is not set");
+                reply = await callOpenAICompatible("https://api.deepseek.com", dsKey, selectedModel.modelId, fullSystemPrompt, userMessage, conversationHistory);
             } else {
-                reply = await callGroq(selectedModel.modelId, fullSystemPrompt, userMessage, conversationHistory);
+                const orKey = process.env.OPENROUTER_API_KEY;
+                if (!orKey) throw new Error("OPENROUTER_API_KEY is not set");
+                reply = await callOpenAICompatible("https://openrouter.ai/api/v1", orKey, selectedModel.modelId, fullSystemPrompt, userMessage, conversationHistory, { "HTTP-Referer": "https://skylark-neon-beta.vercel.app" });
             }
             lastError = null;
             break;

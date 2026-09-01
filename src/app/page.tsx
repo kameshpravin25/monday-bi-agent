@@ -17,10 +17,11 @@ interface ModelOption {
 
 const DEFAULT_MODELS: ModelOption[] = [
     { id: "gemini-flash", name: "Gemini 3.6 Flash", provider: "gemini" },
-    { id: "llama-3.3-70b", name: "Llama 3.3 70B", provider: "groq" },
-    { id: "qwen-qwq-32b", name: "Qwen QwQ 32B", provider: "groq" },
-    { id: "deepseek-r1-70b", name: "DeepSeek R1 70B", provider: "groq" },
-    { id: "gemma2-9b", name: "Gemma 2 9B", provider: "groq" },
+    { id: "deepseek-chat", name: "DeepSeek V3", provider: "deepseek" },
+    { id: "deepseek-reasoner", name: "DeepSeek R1", provider: "deepseek" },
+    { id: "llama-3.3-70b", name: "Llama 3.3 70B", provider: "openrouter" },
+    { id: "qwen-qwq-32b", name: "Qwen QwQ 32B", provider: "openrouter" },
+    { id: "gemma-3-27b", name: "Gemma 3 27B", provider: "openrouter" },
 ];
 
 const HINT_QUERIES = [
