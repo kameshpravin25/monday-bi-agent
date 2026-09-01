@@ -172,7 +172,15 @@ async function callOpenAICompatible(
 
     if (!res.ok) {
         const text = await res.text();
-        throw new Error(`API error (${res.status}): ${text}`);
+        let friendlyMsg = `Model unavailable (${res.status})`;
+        try {
+            const errData = JSON.parse(text);
+            if (res.status === 429) friendlyMsg = "This model is rate-limited. Please try again in a few seconds or switch to another model.";
+            else if (res.status === 402) friendlyMsg = "This model requires credits. Please switch to a free model.";
+            else if (res.status === 404) friendlyMsg = "This model is currently unavailable. Please try a different model.";
+            else if (errData?.error?.message) friendlyMsg = errData.error.message;
+        } catch { /* use default */ }
+        throw new Error(friendlyMsg);
     }
 
     const data = await res.json();
